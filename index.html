@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>S S Textile — GST Invoice</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--primary:#1a365d;--border:#000;--text:#000}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Poppins',Arial,sans-serif;font-size:12px;color:var(--text);background:#f5f5f5}
+.container{max-width:1400px;margin:0 auto;padding:20px}
+.header{display:flex;justify-content:space-between;align-items:center;background:white;padding:15px 20px;border-radius:8px;margin-bottom:15px;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{width:45px;height:45px;border:2px solid var(--primary);border-radius:6px;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--primary)}
+.btn{padding:8px 14px;border-radius:6px;border:none;cursor:pointer;font-weight:600;font-size:13px}
+.btn-primary{background:var(--primary);color:white}
+.btn-secondary{background:white;color:var(--text);border:1px solid #ccc}
+.grid{display:grid;grid-template-columns:280px 1fr;gap:15px}
+.card{background:white;border-radius:8px;padding:15px;border:1px solid #ddd}
+.card h3{font-size:14px;font-weight:700;margin-bottom:10px;color:var(--primary)}
+.form-group{margin-bottom:8px}
+.form-group label{display:block;font-size:11px;font-weight:600;margin-bottom:3px}
+.form-group input,.form-group select,.form-group textarea{width:100%;padding:6px;border:1px solid #ccc;border-radius:4px;font-size:12px}
+.input-row{display:flex;gap:8px}
+.input-row>*{flex:1}
+table{width:100%;border-collapse:collapse;font-size:12px}
+table th,table td{padding:8px;text-align:left;border:1px solid #ccc}
+table thead{background:#e2e8f0}
+.text-right{text-align:right}.text-center{text-align:center}
+.summary{background:#f8fafc;padding:12px;border-radius:6px;margin-top:10px;border-left:3px solid var(--primary)}
+.summary-row{display:flex;justify-content:space-between;padding:4px 0;font-size:12px}
+.summary-row.total{border-top:2px solid var(--primary);margin-top:5px;padding-top:8px;font-weight:700;font-size:14px}
+
+/* PRINT INVOICE DESIGN - Exact photo jaisa */
+.print-invoice{display:none;background:white;padding:0;color:#000;font-size:11px}
+.invoice-box{border:2px solid #000}
+.invoice-header{display:grid;grid-template-columns:60% 40%;border-bottom:2px solid #000}
+.inv-left{padding:10px;border-right:2px solid #000}
+.inv-right{padding:5px}
+.logo-section{border-bottom:1px solid #000;padding-bottom:8px;margin-bottom:8px;text-align:center}
+.logo-section h1{font-size:18px;font-weight:800;color:var(--primary)}
+.logo-section p{font-size:9px;margin-top:2px}
+.tax-title{text-align:center;font-size:16px;font-weight:700;padding:5px 0;border-bottom:1px solid #000}
+.inv-table{width:100%;border-collapse:collapse}
+.inv-table td{border:1px solid #000;padding:5px;vertical-align:top}
+.inv-table th{border:1px solid #000;padding:5px;background:#e2e8f0;font-weight:700;text-align:center}
+.consignee{font-size:11px;line-height:1.5}
+.inv-no-table{width:100%;border-collapse:collapse;font-size:10px}
+.inv-no-table td{border:1px solid #000;padding:4px}
+.items-table{width:100%;border-collapse:collapse;font-size:11px}
+.items-table th{background:#e2e8f0;border:1px solid #000;padding:6px;font-weight:700;text-align:center}
+.items-table td{border:1px solid #000;padding:6px;vertical-align:top}
+.items-table.text-right{text-align:right}
+.totals-table{width:100%;border-collapse:collapse;font-size:11px}
+.totals-table td{border:1px solid #000;padding:5px}
+.totals-table.label{text-align:right;font-weight:600}
+.totals-table.value{text-align:right;width:100px}
+.bank-section{border-top:2px solid #000;padding:8px;font-size:11px}
+.bank-section b{font-weight:700}
+.declaration{border-top:2px solid #000;display:grid;grid-template-columns:60% 40%}
+.decl-left{padding:10px;border-right:2px solid #000}
+.decl-right{padding:10px;text-align:center}
+.sign-line{margin-top:40px;border-top:1px solid #000;padding-top:5px;font-size:10px}
+.amount-words{padding:8px;border:1px solid #000;font-size:11px;font-weight:600;margin:5px 0}
+@media print{.noprint{display:none}.print-invoice{display:block}body{background:white}}
+@media(max-width:1024px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header noprint">
+    <div class="brand">
+      <div class="logo">SS</div>
+      <div><h2 style="margin:0;font-size:18px">S S Textile</h2><p style="margin:0;font-size:11px;color:#666">GST Billing System</p></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" id="newInvoiceBtn">+ New Invoice</button>
+      <button class="btn btn-secondary" id="exportBtn">Backup</button>
+      <label class="btn btn-secondary">Import<input id="importFile" type="file" accept="application/json" style="display:none"></label>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- LEFT FORM -->
+    <aside class="noprint">
+      <div class="card">
+        <h3>Business Details</h3>
+        <div style="font-size:11px;line-height:1.6">
+          <b>S S TEXTILE</b><br>
+          GSTIN: 24BRXPM6996GIZT<br>
+          PLOT NO. 296-2-3B, G.I.D.C. UMBERGAON<br>
+          TA: UMBERGAON - 396171, DIST. VALSAD, GUJARAT<br>
+          Mobile: +91 98765 43210
+        </div>
+        <hr style="margin:8px 0">
+        <div style="font-size:11px;line-height:1.6">
+          <b>Bank: HDFC Bank</b><br>
+          Branch: UMBERGAON<br>
+          A/C: 50200087857010<br>
+          IFSC: HDFC000095<br>
+          UPI: sstextile@hdfc
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3>Customer</h3>
+        <div class="form-group"><label>Name</label><input id="custName" placeholder="Customer name"></div>
+        <div class="form-group"><label>Mobile</label><input id="custMobile"></div>
+        <div class="form-group"><label>GSTIN</label><input id="custGst"></div>
+        <div class="form-group"><label>Billing Address</label><textarea id="custAddr" rows="2"></textarea></div>
+        <button class="btn btn-primary" id="saveCustomerBtn" style="width:100%">Save Customer</button>
+      </div>
+
+      <div class="card" style="margin-top:12px">
+        <h3>Create Invoice</h3>
+        <div class="form-group"><label>Invoice No</label><input id="invNo"></div>
+        <div class="form-group"><label>Date</label><input id="invDate" type="date"></div>
+        <div class="form-group"><label>Customer</label><select id="custSelect"><option value="">--Select--</option></select></div>
+        <div class="form-group"><label>Delivery Terms</label><input id="deliveryTerms" value="15 DAYS CREDIT"></div>
+        <div class="form-group"><label>Delivery Type</label><input id="deliveryType" value="DOOR"></div>
+
+        <h4 style="font-size:12px;margin:10px 0 5px">Add Item</h4>
+        <div class="form-group"><label>Description</label><input id="itemName" placeholder="e.g. STYLE NAME - RANGMANCH KURTI"></div>
+        <div class="input-row">
+          <div class="form-group"><label>HSN Code</label><input id="itemHSN" placeholder="9988"></div>
+          <div class="form-group"><label>Qty</label><input id="itemQty" type="number"></div>
+        </div>
+        <div class="input-row">
+          <div class="form-group"><label>Rate</label><input id="itemRate" type="number"></div>
+          <div class="form-group"><label>GST%</label><select id="itemGst"><option value="5">5%</option><option value="12">12%</option><option value="18" selected>18%</option></select></div>
+        </div>
+        <button class="btn btn-primary" id="addItemBtn" style="width:100%;margin-top:5px">ADD ITEM</button>
+        <button class="btn btn-secondary" id="saveInvoiceBtn" style="width:100%;margin-top:8px">✓ GENERATE INVOICE</button>
+      </div>
+    </aside>
+
+    <!-- RIGHT PREVIEW -->
+    <main>
+      <div class="card noprint">
+        <h3>Items Added</h3>
+        <table id="itemsTable">
+          <thead><tr><th>S.No</th><th>Description</th><th>HSN</th><th>Qty</th><th>Rate</th><th>Amount</th><th>Action</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="summary">
+          <div class="summary-row"><span>Subtotal:</span><span id="subtotalCell">₹0.00</span></div>
+          <div class="summary-row"><span>CGST 2.5%:</span><span id="cgstCell">₹0.00</span></div>
+          <div class="summary-row"><span>SGST 2.5%:</span><span id="sgstCell">₹0.00</span></div>
+          <div class="summary-row total"><span>Total Invoice Value:</span><span id="grandTotalCell">₹0.00</span></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn btn-primary" id="printBtn">🖨️ Print Invoice</button>
+          <button class="btn btn-primary" id="pdfBtn">📄 Download PDF</button>
+          <button class="btn btn-secondary" id="clearBtn">Clear All</button>
+        </div>
+      </div>
+
+      <div class="card noprint" style="margin-top:12px">
+        <h3>Invoice History</h3>
+        <table id="historyTable"><thead><tr><th>Invoice No</th><th>Date</th><th>Customer</th><th>Total</th><th>Action</th></tr></thead><tbody></tbody></table>
+      </div>
+
+      <div id="printArea" class="print-invoice"></div>
+    </main>
+  </div>
+</div>
+
+<script>
+const STORAGE_INV='sst_inv_final',STORAGE_CUST='sst_cust_final';
+let items=[],$ = id=>document.getElementById(id),fmt=v=>Number(v).toLocaleString('en-IN',{style:'currency',currency:'INR'});
+
+function numberToWords(num){
+  if(num===0)return'Zero Only';
+  const a=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine','Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'],
+  b=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+  function inWords(n){if(n<20)return a[n];if(n<100)return b[Math.floor(n/10)]+(n%10?' '+a[n%10]:'');if(n<1000)return a[Math.floor(n/100)]+' Hundred'+(n%100?' '+inWords(n%100):'');if(n<100000)return inWords(Math.floor(n/1000))+' Thousand'+(n%1000?' '+inWords(n%1000):'');return inWords(Math.floor(n/100000))+' Lakh'+(n%100000?' '+inWords(n%100000):'')}
+  return inWords(Math.floor(num))+' Rupees Only'.toUpperCase()
+}
+
+function loadJSON(k,d){try{return JSON.parse(localStorage.getItem(k)||JSON.stringify(d))}catch(e){return d}}
+function saveJSON(k,o){localStorage.setItem(k,JSON.stringify(o))}
+
+function populateCustomerSelect(){
+  const s=$('custSelect');s.innerHTML='<option value="">--Select--</option>';
+  loadJSON(STORAGE_CUST,[]).forEach(c=>{const o=document.createElement('option');o.value=c.name;o.dataset.addr=c.address;o.dataset.gst=c.gstin;o.dataset.mob=c.mobile;o.textContent=c.name;s.appendChild(o)});
+  s.onchange=()=>{const sel=s.options[s.selectedIndex];if(sel.dataset.addr){$('custAddr').value=sel.dataset.addr;$('custGst').value=sel.dataset.gst||'';$('custMobile').value=sel.dataset.mob||''}}
+}
+
+$('saveCustomerBtn').addEventListener('click',()=>{
+  const n=$('custName').value.trim();if(!n){alert('Enter name');return}
+  let c=loadJSON(STORAGE_CUST,[]);c.unshift({name:n,mobile:$('custMobile').value,gstin:$('custGst').value,address:$('custAddr').value});
+  saveJSON(STORAGE_CUST,c);populateCustomerSelect();alert('✓ Customer saved')
+})
+
+function renderItems(){
+  const t=document.querySelector('#itemsTable tbody');t.innerHTML='';
+  let sub=0,cg=0,sg=0;
+  items.forEach((it,idx)=>{
+    const amt=it.qty*it.rate,gst=amt*(it.gst/100),c=gst/2,s=gst/2;
+    sub+=amt;cg+=c;sg+=s;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="text-center">${idx+1}</td><td>${it.name}</td><td class="text-center">${it.hsn||'9988'}</td><td class="text-center">${it.qty}</td><td class="text-right">${fmt(it.rate)}</td><td class="text-right"><b>${fmt(amt)}</b></td><td class="text-center"><button onclick="removeItem(${idx})" style="border:none;background:red;color:white;padding:3px 8px;border-radius:3px;cursor:pointer">✕</button></td>`;
+    t.appendChild(tr)
+  });
+  const grand=Math.round((sub+cg+sg)*100)/100;
+  $('subtotalCell').innerText=fmt(sub);
+  $('cgstCell').innerText=fmt(cg);
+  $('sgstCell').innerText=fmt(sg);
+  $('grandTotalCell').innerText=fmt(grand);
+  return{sub,cg,sg,grand}
+}
+
+$('addItemBtn').addEventListener('click',()=>{
+  const n=$('itemName').value.trim(),q=Number($('itemQty').value||0),r=Number($('itemRate').value||0),g=Number($('itemGst').value),h=$('itemHSN').value||'9988';
+  if(!n||q<=0||r<0){alert('Fill all fields');return}
+  items.push({name:n,qty:q,rate:r,gst:g,hsn:h});
+  $('itemName').value='';$('itemQty').value='';$('itemRate').value='';renderItems()
+})
+
+function removeItem(i){items.splice(i,1);renderItems()}
+
+$('saveInvoiceBtn').addEventListener('click',()=>{
+  if(items.length===0){alert('Add items first');return}
+  let invNo=$('invNo').value.trim()||'SST'+Date.now().toString().slice(-4);
+  const invData={
+    id:'inv_'+Date.now(),inv:invNo,date:$('invDate').value||new Date().toISOString().slice(0,10),
+    customer:$('custSelect').value||'Walk-in',custAddr:$('custAddr').value,custGst:$('custGst').value,
+    deliveryTerms:$('deliveryTerms').value,deliveryType:$('deliveryType').value,
+    items:items.slice(),...renderItems()
+  };
+  let inv=loadJSON(STORAGE_INV,[]);inv.unshift(invData);saveJSON(STORAGE_INV,inv);
+  alert('✓ Invoice saved');refreshHistory();items=[];renderItems();$('invNo').value=''
+})
+
+function refreshHistory(){
+  const t=document.querySelector('#historyTable tbody');t.innerHTML='';
+  loadJSON(STORAGE_INV,[]).forEach(x=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b>${x.inv}</b></td><td>${x.date}</td><td>${x.customer}</td><td class="text-right"><b>${fmt(x.grand)}</b></td><td class="text-center"><button onclick="printInvoice('${x.id}')" class="btn btn-primary" style="padding:4px 8px;font-size:11px">Print</button></td>`;
+    t.appendChild(tr)
+  })
+}
+
+function printInvoice(id){
+  const inv=loadJSON(STORAGE_INV,[]).find(x=>x.id===id);
+  if(!inv)return alert('Not found');
+  $('printArea').innerHTML=buildInvoiceHTML(inv);
+  setTimeout(()=>window.print(),200)
+}
+
+function buildInvoiceHTML(inv){
+  const company={name:'SS TEXTILE',addr:'PLOT NO. 296-2-3B, G.I.D.C. UMBERGAON\nTA: UMBERGAON - 396 171\nDIST: VALSAD, GUJARAT',gst:'24BRXPM6996GIZT',email:'sstextile24@gmail.com'};
+  const buyerAddr=inv.custAddr||'SAPNA GARMENTS\nNO-2823, 1ST FLOOR, 2ND PHASE, G.I.D.C UMBERGAON-396171, DIST VALSAD GUJARAT';
+  const buyerGst=inv.custGst||'24AKZPM0036F1Z5';
+  const itemsRows=inv.items.map((it,idx)=>`<tr><td class="text-center">${idx+1}</td><td>${it.name.replace('\n','<br>')}<br><span style="font-size:10px">COLOUR - RED</span></td><td class="text-center">${it.hsn||'9988'}</td><td class="text-center">${it.qty}</td><td class="text-right">${it.rate.toFixed(2)}</td><td class="text-right">${(it.qty*it.rate).toFixed(2)}</td></tr>`).join('');
+  const totalQty=inv.items.reduce((a,b)=>a+b.qty,0);
+
+  return `<div class="invoice-box">
+    <div class="invoice-header">
+      <div class="inv-left">
+        <div class="logo-section"><h1>S S TEXTILE</h1><p>Professional Textile Solutions</p></div>
+        <div class="tax-title">TAX INVOICE</div>
+        <div style="padding:8px">
+          <b>CONSIGNOR:</b><br>
+          SS TEXTILE<br>
+          Plot No.296-2-3B G.I.D.C. UMBERGAON<br>
+          Ta: UMBERGAON-396 171<br>
+          Dist: Valsad, Gujarat, State Code: 24<br>
+          UDYAM-GJ-25-0050967<br>
+          GSTIN: ${company.gst}<br>
+          Email: ${company.email}<br><br>
+          <b>BILLING ADDRESS:</b><br>
+          ${buyerAddr.replace('\n','<br>')}<br><br>
+          GST No: ${buyerGst}
+        </div>
+        <div style="padding:8px;border-top:1px solid #000">
+          <b>DESCRIPTION OF GOODS:</b><br>
+          JOB WORK GARMENTS STITCHING
+        </div>
+      </div>
+      <div class="inv-right">
+        <table class="inv-no-table">
+          <tr><td><b>PLOT NO.</b> 296-2-3B, G.I.D.C. UMBERGAON<br><b>TA:</b> UMBERGAON - 396 171<br><b>DIST:</b> VALSAD, GUJARAT<br><b>GSTIN:</b> ${company.gst}</td></tr>
+          <tr><td><b>INVOICE NO</b><br>${inv.inv}</td><td><b>DATE</b><br>${inv.date.split('-').reverse().join('.')}</td><td><b>EWAYBILL NO</b><br></td></tr>
+          <tr><td colspan="2"><b>DELIVERY CHALLAN NO.</b><br></td><td><b>DELIVERY CH. DATE</b><br></td></tr>
+        </table>
+        <div style="padding:5px;border-top:1px solid #000;font-size:10px">
+          <b>BUYER (IF OTHER THAN CONSIGNEE)</b><br>NA<br><br>
+          <b>TERMS OF DELIVERY AND PAYMENT</b><br>
+          PAYMENT TERMS: ${inv.deliveryTerms}<br>
+          CGST: 2.5%<br>
+          SGST: 2.5%<br>
+          IGST: 5%<br>
+          INSURANCE: NA<br>
+          FREIGHT: <br>
+          DELIVERY: ${inv.deliveryType}
+        </div>
+      </div>
+    </div>
+
+    <table class="items-table">
+      <thead><tr><th style="width:40px">S.NO</th><th>Description Of Goods</th><th style="width:80px">HSN Code</th><th style="width:80px">Quantity</th><th style="width:80px">Rate</th><th style="width:100px">Amount</th></tr></thead>
+      <tbody>
+        ${itemsRows}
+        <tr><td colspan="6" style="height:60px;padding:8px;font-size:10px">
+          <div>Mention → JOB WORK ONLY FOR STITCHING</div>
+          <div>TOTAL 0 CARTON BOX</div>
+          <div>Freight & Transportation</div>
+        </td></tr>
+        <tr><td colspan="3" class="text-right"><b>Total:-</b></td><td class="text-center"><b>${totalQty}</b></td><td></td><td class="text-right"><b>${inv.subtotal.toFixed(2)}</b></td></tr>
+      </tbody>
+    </table>
+
+    <div class="amount-words">Amount (In Words): ${numberToWords(inv.grand)}</div>
+
+    <table class="totals-table">
+      <tr><td style="width:70%">NINETY THREE THOUSAND SEVENTY NINE RUPEES ONLY</td>
+      <td><div style="display:flex;justify-content:space-between"><span>CGST</span><span>2.5%</span><span>${inv.cgst.toFixed(2)}</span></div></td></tr>
+      <tr><td></td><td><div style="display:flex;justify-content:space-between"><span>SGST</span><span>2.5%</span><span>${inv.sgst.toFixed(2)}</span></div></td></tr>
+      <tr><td></td><td><div style="display:flex;justify-content:space-between"><span>IGST</span><span>5%</span><span>-</span></div></td></tr>
+      <tr><td></td><td><div style="display:flex;justify-content:space-between"><span>ROUND OFF</span><span></span><span>${inv.grand.toFixed(2)}</span></div></td></tr>
+      <tr style="font-weight:700"><td></td><td><div style="display:flex;justify-content:space-between"><span>TOTAL INVOICE VALUE</span><span></span><span>${inv.grand.toFixed(2)}</span></div></td></tr>
+    </table>
+
+    <div class="bank-section">
+      <b>Company's Bank Details</b><br>
+      Bank Name: HDFC Bank<br>
+      A/c No.: 50200087857010<br>
+      Branch & IFSC Code: UMBERGAON - HDFC000095
+    </div>
+
+    <div class="declaration">
+      <div class="decl-left">
+        <b>Declaration</b><br>
+        We declare that this invoice shows the actual price of the goods<br>
+        described and that all particulars are true and correct
+      </div>
+      <div class="decl-right">
+        <div style="font-weight:700">FOR SS TEXTILE</div>
+        <div class="sign-line">Authorized Signatory</div>
+      </div>
+    </div>
+  </div>`
+}
+
+$('newInvoiceBtn').addEventListener('click',()=>{items=[];renderItems();$('invNo').value='';$('invDate').value=new Date().toISOString().slice(0,10)})
+$('clearBtn').addEventListener('click',()=>{if(confirm('Clear all items?')){items=[];renderItems()}})
+$('printBtn').addEventListener('click',()=>{if(items.length===0){alert('Add items');return}const t=renderItems();const temp={inv:$('invNo').value||'DRAFT',date:$('invDate').value||new Date().toISOString().slice(0,10),customer:$('custSelect').value,custAddr:$('custAddr').value,custGst:$('custGst').value,deliveryTerms:$('deliveryTerms').value,deliveryType:$('deliveryType').value,items:items.slice(),...t};$('printArea').innerHTML=buildInvoiceHTML(temp);setTimeout(()=>window.print(),200)})
+$('pdfBtn').addEventListener('click',async()=>{if(items.length===0){alert('Add items');return}const t=renderItems();const temp={inv:$('invNo').value||'DRAFT',date:$('invDate').value||new Date().toISOString().slice(0,10),customer:$('custSelect').value,custAddr:$('custAddr').value,custGst:$('custGst').value,deliveryTerms:$('deliveryTerms').value,deliveryType:$('deliveryType').value,items:items.slice(),...t};$('printArea').innerHTML=buildInvoiceHTML(temp);setTimeout(async()=>{const canvas=await html2canvas($('printArea'),{scale:2});const pdf=new jspdf.jsPDF('p','mm','a4');const w=pdf.internal.pageSize.getWidth();const h=(canvas.height*w)/canvas.width;pdf.addImage(canvas.toDataURL('image/png'),'PNG',0,0,w,h);pdf.save(`${temp.inv}.pdf`)},300)})
+
+$('exportBtn').addEventListener('click',()=>{const p={invoices:loadJSON(STORAGE_INV,[]),customers:loadJSON(STORAGE_CUST,[])};const b=new Blob([JSON.stringify(p)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`backup_${new Date().toISOString().slice(0,10)}.json`;a.click()})
+$('importFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const j=JSON.parse(ev.target.result);if(confirm('Overwrite data?')){saveJSON(STORAGE_INV,j.invoices||[]);saveJSON(STORAGE_CUST,j.customers||[]);populateCustomerSelect();refreshHistory();alert('✓ Imported')}}catch{alert('Invalid file')}};r.readAsText(f);e.target.value=''})
+window.removeItem=removeItem;window.printInvoice=printInvoice;
+populateCustomerSelect();refreshHistory();$('invDate').value=new Date().toISOString().slice(0,10)
+</script>
+</body>
+</html>
